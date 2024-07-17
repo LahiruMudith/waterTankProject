@@ -1,153 +1,144 @@
 package waterLevelProject;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.event.*;
+
 import java.awt.*;
+import java.awt.event.*;
 
-class WaterTankFrame extends JFrame{
-    private JSlider waterLevelSlider;
+class WaterLevelObserver extends JFrame{
+    public void update(int waterLevel){
+        //
+    }
+}
 
-    WaterTankFrame(WaterTankController waterTankController){
-        setSize(300,300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("Water Tank");
+class DisplayFrame extends WaterLevelObserver{
+    private JLabel displayLabel;
+
+    DisplayFrame(){
+        setSize(300, 300);
         setLocationRelativeTo(null);
+        setTitle("Display");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+        this.displayLabel = new JLabel("50");
+        this.displayLabel.setFont(new Font("", 1, 30));
+        add(displayLabel);
+        setVisible(true);
+    }
 
-        this.waterLevelSlider = new JSlider(JSlider.VERTICAL);
-        this.waterLevelSlider.setMajorTickSpacing(50);
-        this.waterLevelSlider.setPaintLabels(true);
-        add(waterLevelSlider);
+    public void update(int waterLevel){
+        this.displayLabel.setText(Integer.toString(waterLevel));
+    }
+}
 
-        this.waterLevelSlider.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                int value = waterLevelSlider.getValue();
-                waterTankController.checkValue(value);
-            }
-        });
+class AlarmFrame extends WaterLevelObserver{
+    private JLabel alarmLabel;
+    AlarmFrame(){
+        setSize(300, 300);
+        setLocationRelativeTo(null);
+        setTitle("Alarm");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+
+        this.alarmLabel = new JLabel("Off");
+        this.alarmLabel.setFont(new Font("", 1, 30));
+        add(alarmLabel);
 
         setVisible(true);
+    }
+
+    public void update(int waterLevel){
+        this.alarmLabel.setText(waterLevel >=75? "On" : "Off");
+    }
+}
+
+class SplitterFrame extends WaterLevelObserver{
+    private JLabel splitterLabel;
+
+    SplitterFrame(){
+        setSize(300, 300);
+        setLocationRelativeTo(null);
+        setTitle("Splitter");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+
+        this.splitterLabel = new JLabel("Off");
+        this.splitterLabel.setFont(new Font("", 1, 30));
+        add(splitterLabel);
+
+        setVisible(true);
+    }
+
+    public void update(int waterLevel){
+        this.splitterLabel.setText(waterLevel >=90 ? "On" : "Off");
     }
 }
 
 class WaterTankController{
-    private WaterLevelFrame waterLevelFrame;
-    private AlarmFrame alarmFrame;
-    private SpliterFrame spliterFrame;
+    private WaterLevelObserver[] observers = new WaterLevelObserver[0];
 
-    private int waterTankLevel;
+    private int waterLevel;
 
-    public void setAlarmFrame(AlarmFrame alarmFrame){
-        this.alarmFrame = alarmFrame;
+    public void addWaterLevelObserver(WaterLevelObserver levelObserver){
+        WaterLevelObserver[] temp = new WaterLevelObserver[observers.length + 1];
+        for(int i = 0; i < observers.length; i++){
+            temp[i] = observers[i];
+        }
+        temp[temp.length-1] = levelObserver;
+        observers = temp;
     }
 
-    public void setDisplayFrame(WaterLevelFrame waterLevelFrame){
-        this.waterLevelFrame = waterLevelFrame;
-    }
-
-    public void setSplitterFrame(SpliterFrame splitterFrame){
-        this.spliterFrame = splitterFrame;
-    }
-
-    public void checkValue(int value){
-        if (this.waterTankLevel != value){
-            this.waterTankLevel = value;
-            setWaterLevel();
+    public void setWaterLevel(int waterLevel){
+        if(this.waterLevel != waterLevel){
+            this.waterLevel = waterLevel;
+            notifyObject();
         }
     }
 
-    public void setWaterLevel(){
-        this.alarmFrame.setShowAlarm(waterTankLevel);
-        this.waterLevelFrame.setShowWaterLevel(String.valueOf(waterTankLevel));
-        this.spliterFrame.setShowAlarm(waterTankLevel);
+    public void notifyObject(){
+        for(WaterLevelObserver waterLevelObserver : observers){
+            waterLevelObserver.update(waterLevel);
+        }
     }
 }
 
+class WaterTankFrame extends JFrame{
 
-class WaterLevelFrame extends JFrame {
-    private JLabel showWaterLevel;
+    private JSlider waterLevelSlider;
+    private int waterLevel = 0;
+    private WaterTankController waterTankController;
 
-    WaterLevelFrame() {
-        setSize(300,300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    WaterTankFrame(WaterTankController waterTankController){
+        this.waterTankController = waterTankController;
+        setSize(300, 300);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setTitle("Water Tank");
         setLocationRelativeTo(null);
-        setTitle("Water Thank Level");
 
-        this.showWaterLevel = new JLabel("50");
-        this.showWaterLevel.setFont(new Font("",2,100));
-        add(showWaterLevel);
+        this.waterLevelSlider = new JSlider(JSlider.VERTICAL);
+        this.waterLevelSlider.setMajorTickSpacing(10);
+        this.waterLevelSlider.setPaintLabels(true);
+        this.waterLevelSlider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                waterLevel = waterLevelSlider.getValue();
+                waterTankController.setWaterLevel(waterLevel);
+            }
+        });
+
+        add(waterLevelSlider);
 
         setVisible(true);
     }
 
-    public void setShowWaterLevel(String value){
-        this.showWaterLevel.setText(value);
-    }
-    public JLabel getShowWaterLevel(){
-        return this.showWaterLevel;
-    }
 }
-
-class AlarmFrame extends JFrame {
-    private JLabel showAlarm;
-
-    AlarmFrame(){
-        setSize(300,300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-//        setLayout(new FlowLayout(FlowLayout.CENTER));
-        setTitle("Alarm Frame");
-
-        this.showAlarm = new JLabel("Off");
-        this.showAlarm.setFont(new Font("",1,100));
-        add(showAlarm);
-
-        setVisible(true);
-    }
-
-    public JLabel getShowAlarm() {
-        return showAlarm;
-    }
-
-    public void setShowAlarm(int value) {
-            this.showAlarm.setText(value>75? "On" : "Off");
-    }
-}
-
-class SpliterFrame extends JFrame {
-    private JLabel showSpliter;
-
-    SpliterFrame(){
-        setSize(300,300);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setTitle("Spliter Frame");
-
-
-        this.showSpliter = (new JLabel("Off"));
-        this.showSpliter.setFont(new Font("",1,100));
-        add(showSpliter);
-
-        setVisible(true);
-    }
-
-    public JLabel getShowAlarm() {
-        return showSpliter;
-    }
-
-    public void setShowAlarm(int value) {
-        this.showSpliter.setText(value>90 ? "On" : "Off");
-
-    }
-}
-
-public class Example {
+class Example{
     public static void main(String[] args) {
-        WaterTankController wtc = new WaterTankController();
-        wtc.setAlarmFrame(new AlarmFrame());
-        wtc.setDisplayFrame(new WaterLevelFrame());
-        wtc.setSplitterFrame(new SpliterFrame());
-        WaterTankFrame w1 = new WaterTankFrame(wtc);
-
+        WaterTankController controller = new WaterTankController();
+        controller.addWaterLevelObserver(new AlarmFrame());
+        controller.addWaterLevelObserver(new SplitterFrame());
+        controller.addWaterLevelObserver(new DisplayFrame());
+        WaterTankFrame f1 = new WaterTankFrame(controller);
     }
 }
